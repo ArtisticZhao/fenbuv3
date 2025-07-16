@@ -11,16 +11,16 @@ L = pi/4;         % domain length so that Ω = [0, Ldom*π]
 
 
 
-Nx   = 307;
-dt   = 0.001;
+Nx   = 21;
+dt   = 0.001/3;
 
 Tend = 100;        % total simulation time
 
 x = linspace(0, L, Nx);
 dx = x(2) - x(1);
 
-disp(dt/dx^2)
-% assert(dt/dx^2<0.5)
+fprintf("dt/dx^2 = %.2f\n", dt/dx^2);
+assert(dt/dx^2<0.5)
 
 Ns = round((2*tau) / dt);
 Nt = round(Tend*tau/dt);
@@ -33,14 +33,6 @@ h = h_win(s, tau);
 
 % figure;
 % plot(s, h); title("h(s)")
-% 
-% u_test = rand(Nx, Nt);
-% 
-% u_tau = calc_u_tau(u_test, h, 0, dt);
-% 
-% res = laplacian_neumann(u_tau, dx)
-
-
 
 %% ============== 初始条件设置 ==============
 u0 = 1;                            % 基准稳态值 (初始均匀分布)
@@ -60,7 +52,7 @@ flux_save = zeros(size(u));
 flux_1_save = zeros(size(u));
 flux_2_save = zeros(size(u));
 
-for t = 1: Nt-1
+for t = progress(1: Nt-1, 'UpdateRate', 0.5)
     abs_idx = t + Ns;
     u_tau = calc_u_tau(u, h, t-1, dt);
     u_current = u(:, abs_idx); 
@@ -92,19 +84,19 @@ end
 
 toc
 
-%============= 可视化 =============%
+%============= visualization =============%
 tax = -2*tau:dt:Tend*tau-dt;
 [X, T_mesh] = meshgrid(x, tax);
-% u(:, 60000:end) = 0.5;
 
+%% for visualization of data with nan, the data later than cut_off in tau unit, will be cutted. 
 cut_off = 0;
 if cut_off > 0
-u(:, tax>cut_off) = u0;
-flux_save(:, tax>cut_off) = 0;
-flux_1_save(:, tax>cut_off) = 0;
-flux_2_save(:, tax>cut_off) = 0;
-max_rhs( tax>cut_off) = 0;
-u_tau_save(:, tax>cut_off) = u0;
+    u(:, tax>cut_off) = u0;
+    flux_save(:, tax>cut_off) = 0;
+    flux_1_save(:, tax>cut_off) = 0;
+    flux_2_save(:, tax>cut_off) = 0;
+    max_rhs( tax>cut_off) = 0;
+    u_tau_save(:, tax>cut_off) = u0;
 end
 
 figure;
@@ -112,8 +104,8 @@ surf(X, T_mesh, u.', 'EdgeColor', 'none');
 view(2); 
 colorbar;
 clim([0, 2])
-xlabel('x'); ylabel('t'); 
-title('u(x,t)的时空演化');
+xlabel('x'); ylabel('t/tau'); 
+title('u(x,t)');
 
 
 figure;
